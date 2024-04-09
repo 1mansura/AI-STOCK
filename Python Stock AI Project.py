@@ -1,3 +1,7 @@
-print("Version 1")
+#Version 1
+
+import yfinance
+
+
 
 
