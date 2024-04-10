@@ -84,5 +84,57 @@ values1 = predictions["Predictions"].value_counts()
 
 print(values1)
 
+precision_score(predictions["Target"], predictions["Predictions"])
 
+predictions["Target"].value_counts() / predictions.shape[0]
+
+#adding addtional predictors to the model
+
+horizons = [2,5,60,250,1000]
+new_predictors = []
+
+for horizon in horizons:
+    rolling_averages = sp500.rolling(horizon).mean()
     
+    ratio_column = f"Close_Ratio_{horizon}"
+    sp500[ratio_column] = sp500["Close"] / rolling_averages["Close"]
+    
+    trend_column = f"Trend_{horizon}"
+    sp500[trend_column] = sp500.shift(1).rolling(horizon).sum()["Target"]
+    
+    new_predictors += [ratio_column, trend_column]
+    
+sp500 =sp500.dropna()
+
+sp500
+
+#improving the model 
+
+model = RandomForestClassifier(n_estimators=200, min_samples_split=50, random_state=1)
+
+def predict(train, test, predictors, model):
+    model.fit(train[predictors], train["Target"])
+    preds = model.predict_proba(test[predictors])[:,1]
+    preds[preds >= .6] = 1
+    preds[preds < .6] = 0 
+    preds= pd.Series(preds, index=test.index, name="Predictions")
+    combined = pd.concat([test["Target"], preds], axis = 1)
+    return combined
+
+
+predictions = backtest(sp500, model, new_predictors)
+
+predictions["Predictions"].value_counts()
+
+
+# 0.0 output will tell us the days price went down
+# 1.0 output will tell us the days price went up 
+
+precision_score(predictions["Target"], predictions["Predictions"])
+
+
+#output the higher the better and more accuarte of data
+
+
+#things to do with model 
+#
