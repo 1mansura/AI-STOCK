@@ -58,3 +58,31 @@ plt.show()
 
 
 #building a back test system
+
+def predict(train, test, predictors, model):
+    model.fit(train[predictors], train["Target"])
+    preds = model.predict(test[predictors])
+    preds= pd.Series(preds, index=test.index, name="Predictions")
+    combined = pd.concat([test["Target"], preds], axis = 1)
+    return combined
+
+
+#training the model with x years of data
+def backtest(data, model, predictors, start=2500, step=250):
+    all_predictions = []
+    
+    for i in range(start, data.shape[0], step):
+        train = data.iloc[0:i].copy()
+        test = data.iloc[i:(i+step)].copy()
+        predictions = predict(train, test, predictors, model)
+        all_predictions.append(predictions)
+    return pd.concat(all_predictions)
+
+predictions = backtest(sp500, model, predictors)
+
+values1 = predictions["Predictions"].value_counts()
+
+print(values1)
+
+
+    
